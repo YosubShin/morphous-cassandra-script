@@ -4,10 +4,7 @@ import com.datastax.driver.core.exceptions.QueryValidationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +47,7 @@ public class Main {
         final String cfName = "testcf";
         final List<String> columns = Arrays.asList("col0", "col1", "col2", "col3");
         final List<String> columnTypes = Arrays.asList("bigint PRIMARY KEY", "bigint", "varchar", "int");
-        final int replicationFactor = 2;
+        final int replicationFactor = 3;
 
         try {
             executeWithSession(session, String.format("DROP KEYSPACE %s;", ksName));
@@ -73,11 +70,10 @@ public class Main {
         }
         executeWithSession(session, sb.toString());
 
-        final ExecutorService executorService = Executors.newFixedThreadPool(3);
-
+        final ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         Random rand = new Random();
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 5000; i++) {
             sb = new StringBuilder();
             sb.append(String.format("INSERT INTO %s.%s (", ksName, cfName));
             columnIter = columns.iterator();
@@ -103,7 +99,7 @@ public class Main {
             });
 
             // Execute Morphous Script in the middle of insertions
-            if (i == 500) {
+            if (i == 2500) {
                 executorService.execute(new Runnable() {
                     @Override
                     public void run() {
