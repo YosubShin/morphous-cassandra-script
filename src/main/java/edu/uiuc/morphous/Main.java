@@ -1,3 +1,5 @@
+package edu.uiuc.morphous;
+
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.exceptions.QueryValidationException;
 
@@ -9,15 +11,34 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+
+
 /**
  * Created by Daniel on 7/27/14.
  */
 public class Main {
+    public static final int numNodes = 10;
+    public static final String[] endpoints;
+    public static final String cassandraPath = "/opt/cassandra";
+
+
+    static {
+        endpoints = new String[numNodes];
+        for (int i = 0; i < numNodes; i++) {
+            endpoints[i] = "node-" + i;
+        }
+    }
+
     public static void main(String[] args) {
         final int concurrency = 50;
         final int maxConnections = 1;
-        final String contactPoint = "127.0.0.1";
+//        final String contactPoint = "127.0.0.1";
         boolean compression = false;
+        final String ksName = "testkeyspace";
+        final String cfName = "testcf";
+        final List<String> columns = Arrays.asList("col0", "col1", "col2", "col3");
+        final List<String> columnTypes = Arrays.asList("bigint PRIMARY KEY", "bigint", "varchar", "int");
+        final int replicationFactor = 3;
 
         PoolingOptions pools = new PoolingOptions();
         pools.setMaxSimultaneousRequestsPerConnectionThreshold(HostDistance.LOCAL, concurrency);
@@ -27,7 +48,7 @@ public class Main {
         pools.setMaxConnectionsPerHost(HostDistance.REMOTE, maxConnections);
 
         Cluster cluster = new Cluster.Builder()
-                .addContactPoints(String.valueOf(contactPoint))
+                .addContactPoints(endpoints)
                 .withPoolingOptions(pools)
                 .withSocketOptions(new SocketOptions().setTcpNoDelay(true))
                 .build();
@@ -42,12 +63,6 @@ public class Main {
         System.out.println(String.format("Connected to cluster '%s' on %s.", metadata.getClusterName(), metadata.getAllHosts()));
 
         System.out.println("Preparing test...");
-
-        final String ksName = "testkeyspace";
-        final String cfName = "testcf";
-        final List<String> columns = Arrays.asList("col0", "col1", "col2", "col3");
-        final List<String> columnTypes = Arrays.asList("bigint PRIMARY KEY", "bigint", "varchar", "int");
-        final int replicationFactor = 3;
 
         try {
             executeWithSession(session, String.format("DROP KEYSPACE %s;", ksName));
@@ -124,7 +139,6 @@ public class Main {
     }
 
     public static void executeMorphousScript(String ksName, String cfName) {
-        final String cassandraPath = "/Users/Daniel/Dropbox/Illinois/research/repos/apache-cassandra-2.0.8-src-0713";
         String cmd = String.format("%s/bin/nodetool -p 7100 -m \"{\"column\":\"col1\"}\" morphous %s %s", cassandraPath, ksName, cfName);
 
         StringBuilder sb = new StringBuilder();
