@@ -1,6 +1,7 @@
 package edu.uiuc.morphous;
 
 import com.datastax.driver.core.*;
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import com.datastax.driver.core.exceptions.QueryValidationException;
 
 import java.io.BufferedReader;
@@ -56,7 +57,17 @@ public class Main {
         if (compression)
             cluster.getConfiguration().getProtocolOptions().setCompression(ProtocolOptions.Compression.SNAPPY);
 
-        final Session session = cluster.connect();
+        final Session session;
+        try {
+            session = cluster.connect();
+        } catch (NoHostAvailableException e) {
+            for (Map.Entry<java.net.InetSocketAddress, java.lang.Throwable> entry : e.getErrors().entrySet()) {
+                System.out.println(entry.getKey());
+                entry.getValue().printStackTrace();
+            }
+            throw e;
+        }
+
 
 
         Metadata metadata = cluster.getMetadata();
