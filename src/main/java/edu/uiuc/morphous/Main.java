@@ -26,8 +26,7 @@ public class Main {
     static {
         endpoints = new String[numNodes];
         for (int i = 0; i < numNodes; i++) {
-//            endpoints[i] = "node-" + i;
-            endpoints[i] = "10.1.1." + (i + 1);
+            endpoints[i] = "node-" + i;
         }
     }
 
